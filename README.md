@@ -388,7 +388,38 @@ Tests are located in `src/tests/`:
 
 ## Deployment
 
+### Azure Deployment (Recommended for Production)
+
+**This service includes comprehensive Azure infrastructure templates for production deployment.**
+
+See the [`/infra`](/infra) directory for:
+- **Bicep templates** for automated Azure resource provisioning
+- **Deployment scripts** with validation and rollback support
+- **Migration guide** from existing systems to Azure
+- **Cost estimates** and optimization tips
+- **Security best practices** and RBAC configuration
+
+Quick start:
+```bash
+cd infra
+./deploy.sh dev  # Deploy to development environment
+```
+
+The Azure deployment includes:
+- ✅ Azure OpenAI (GPT-4 + embeddings)
+- ✅ Azure Cognitive Search (vector + hybrid search)
+- ✅ Azure Cache for Redis
+- ✅ Azure Blob Storage
+- ✅ Azure Key Vault (secrets management)
+- ✅ Application Insights (monitoring)
+- ✅ Container Apps (auto-scaling hosting)
+- ✅ Managed Identity (secure authentication)
+
+📖 **Full documentation**: [`/infra/README.md`](/infra/README.md)
+
 ### Docker Production Build
+
+For non-Azure deployments:
 
 1. Build the image:
 ```bash
@@ -407,15 +438,20 @@ For production deployment:
 1. Set strong secrets:
    - Generate secure `JWT_SECRET`
    - Generate secure `API_KEY`
-   - Use production OpenAI key
+   - Use production OpenAI/Azure OpenAI key
 
 2. Configure proper logging:
    - Set `LOG_LEVEL=info` (not debug)
    - Set `NODE_ENV=production`
 
 3. Set up persistence:
-   - Mount volumes for Qdrant data
-   - Configure Redis persistence (AOF)
+   - Mount volumes for Qdrant data (or use Azure Search)
+   - Configure Redis persistence (AOF) (or use Azure Cache for Redis)
+
+4. For Azure deployments:
+   - Set `AZURE_MODE=true`
+   - Configure Azure service endpoints (see `/infra/.env.azure.example`)
+   - Use Managed Identity for authentication
 
 ## Security
 

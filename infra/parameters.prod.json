@@ -1,0 +1,85 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appName": {
+      "value": "rag-service"
+    },
+    "environment": {
+      "value": "prod"
+    },
+    "location": {
+      "value": "eastus"
+    },
+    "openAiLocation": {
+      "value": "eastus"
+    },
+    "gptDeploymentName": {
+      "value": "gpt-4"
+    },
+    "gptModelName": {
+      "value": "gpt-4"
+    },
+    "gptModelVersion": {
+      "value": "0613"
+    },
+    "gptDeploymentCapacity": {
+      "value": 20
+    },
+    "embeddingDeploymentName": {
+      "value": "text-embedding-3-large"
+    },
+    "embeddingModelName": {
+      "value": "text-embedding-3-large"
+    },
+    "embeddingModelVersion": {
+      "value": "1"
+    },
+    "embeddingDeploymentCapacity": {
+      "value": 20
+    },
+    "searchIndexName": {
+      "value": "rag-documents"
+    },
+    "redisCacheSku": {
+      "value": "Standard"
+    },
+    "redisCacheCapacity": {
+      "value": 2
+    },
+    "storageAccountSku": {
+      "value": "Standard_GRS"
+    },
+    "blobContainerName": {
+      "value": "documents"
+    },
+    "enablePublicNetworkAccess": {
+      "value": false
+    },
+    "dockerImage": {
+      "value": "your-acr.azurecr.io/rag-service:latest"
+    },
+    "containerCpu": {
+      "value": "1.0"
+    },
+    "containerMemory": {
+      "value": "2.0"
+    },
+    "minReplicas": {
+      "value": 2
+    },
+    "maxReplicas": {
+      "value": 10
+    },
+    "tags": {
+      "value": {
+        "Application": "rag-service",
+        "Environment": "production",
+        "ManagedBy": "Bicep",
+        "CostCenter": "Engineering",
+        "Owner": "Platform-Team",
+        "Criticality": "High"
+      }
+    }
+  }
+}
