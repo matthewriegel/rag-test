@@ -10,6 +10,9 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
+      # Azure mode - set to 'true' to use Azure services, 'false' for local
+      - AZURE_MODE=${AZURE_MODE:-false}
+      # Local services (used when AZURE_MODE=false)
       - QDRANT_URL=http://qdrant:6333
       - REDIS_URL=redis://redis:6379
     env_file:
@@ -23,6 +26,8 @@ services:
       - rag-network
     restart: unless-stopped
 
+  # Qdrant vector database (used in local mode, AZURE_MODE=false)
+  # When using Azure AI Search (AZURE_MODE=true), you can comment this out
   qdrant:
     image: qdrant/qdrant:v1.7.4
     ports:
@@ -36,7 +41,12 @@ services:
     networks:
       - rag-network
     restart: unless-stopped
+    # Uncomment to disable when using Azure mode
+    # profiles:
+    #   - local
 
+  # Redis cache (used in both local and Azure modes)
+  # In production, point to Azure Cache for Redis via REDIS_URL
   redis:
     image: redis:7-alpine
     ports:

@@ -568,3 +568,401 @@ MIT
 ## Support
 
 For issues and questions, please open a GitHub issue.
+## Azure Migration
+
+This service now supports **Azure-native deployment** with seamless switching between local and Azure services.
+
+### Why Azure?
+
+**Azure AI Search** provides:
+- **Hybrid Search**: Combines vector similarity with lexical (BM25) ranking for better results
+- **Scalability**: Enterprise-grade search with built-in redundancy
+- **Security**: Private endpoints, managed identities, RBAC
+- **Integration**: Native integration with Azure OpenAI and other Azure services
+
+**Azure OpenAI** provides:
+- **Enterprise Support**: SLA-backed service with Microsoft support
+- **Data Residency**: Keep data in your region
+- **Managed Service**: No infrastructure management
+- **Cost Control**: Fine-grained capacity management
+
+### Quick Start with Azure
+
+#### 1. Deploy Azure Resources
+
+```bash
+cd infra
+./deploy.sh dev  # For development environment
+# OR
+./deploy.sh prod # For production environment
+```
+
+This provisions all required Azure resources using Bicep templates.
+
+#### 2. Configure Environment
+
+Copy the Azure configuration example:
+
+```bash
+cp src/config/azure.env.example .env.azure
+```
+
+Update with values from deployment output, then merge with your `.env`:
+
+```bash
+cat .env.azure >> .env
+```
+
+Key setting - **enable Azure mode**:
+
+```bash
+AZURE_MODE=true
+```
+
+#### 3. Deploy OpenAI Models
+
+Azure OpenAI requires explicit model deployments:
+
+```bash
+az cognitiveservices account deployment create \
+  --name <your-openai-resource> \
+  --resource-group <resource-group> \
+  --deployment-name gpt-4 \
+  --model-name gpt-4 \
+  --model-version "0613" \
+  --model-format OpenAI
+
+az cognitiveservices account deployment create \
+  --name <your-openai-resource> \
+  --resource-group <resource-group> \
+  --deployment-name text-embedding-3-large \
+  --model-name text-embedding-3-large \
+  --model-version "1" \
+  --model-format OpenAI
+```
+
+Or use the Azure Portal → Azure OpenAI → Model deployments.
+
+#### 4. Migrate Data
+
+If you have existing data in Qdrant:
+
+```bash
+# Option 1: Migrate vectors as-is
+npm run migrate:to-azure
+
+# Option 2: Re-index with Azure OpenAI embeddings
+npm run migrate:reindex
+
+# Verify migration quality
+npm run migrate:verify
+```
+
+#### 5. Deploy Application
+
+Deploy to Azure Container Apps or App Service:
+
+```bash
+# Container Apps (recommended)
+az containerapp update \
+  --name <app-name> \
+  --resource-group <resource-group> \
+  --set-env-vars AZURE_MODE=true
+
+# Or use the deployment script
+cd infra
+./deploy.sh prod --deploy-app
+```
+
+### Azure vs Local Mode Comparison
+
+| Feature | Local Mode (`AZURE_MODE=false`) | Azure Mode (`AZURE_MODE=true`) |
+|---------|--------------------------------|--------------------------------|
+| **Vector Store** | Qdrant (self-hosted) | Azure AI Search |
+| **Search Type** | Vector only | Hybrid (vector + lexical) |
+| **LLM/Embeddings** | OpenAI API | Azure OpenAI |
+| **Document Storage** | Not available | Azure Blob Storage |
+| **Cache** | Local Redis | Azure Cache for Redis |
+| **Secrets** | `.env` file | Azure Key Vault (optional) |
+| **Monitoring** | Prometheus metrics | Application Insights |
+| **Authentication** | API keys in env | Managed Identity (optional) |
+| **Cost** | ~$30/month (OpenAI API) | ~$150-250/month (dev)<br>~$600-1200/month (prod) |
+
+### Azure Architecture
+
+```
+┌─────────────┐     ┌──────────────────┐     ┌─────────────────┐
+│   Client    │────▶│  Container App   │────▶│  Azure OpenAI   │
+└─────────────┘     │   (Node.js)      │     └─────────────────┘
+                    └──────────────────┘              │
+                            │                         │
+                    ┌───────┴────────────────────────┴────┐
+                    │                                     │
+            ┌───────▼────────┐                  ┌────────▼────────┐
+            │  Azure AI      │                  │  Blob Storage   │
+            │  Search        │                  │  (Documents)    │
+            └────────────────┘                  └─────────────────┘
+                    │                                     │
+            ┌───────▼────────┐                  ┌────────▼────────┐
+            │  Azure Cache   │                  │   Key Vault     │
+            │  for Redis     │                  │   (Secrets)     │
+            └────────────────┘                  └─────────────────┘
+                    │
+            ┌───────▼────────┐
+            │  Application   │
+            │  Insights      │
+            └────────────────┘
+```
+
+### Azure Services Configuration
+
+#### Azure OpenAI
+- **Deployments required**: 
+  - `gpt-4` or `gpt-35-turbo` for chat completion
+  - `text-embedding-3-large` for embeddings
+- **Capacity**: Adjust TPM/RPM based on load
+- **Region**: Choose region with capacity (e.g., East US, Sweden Central)
+- **Note**: Requires special access approval
+
+#### Azure AI Search
+- **Index**: Automatically created with vector search enabled
+- **Tier**: Basic for dev, Standard or higher for production
+- **Vector Config**: HNSW algorithm with cosine similarity
+- **Hybrid Search**: Combines vector + BM25 lexical search
+
+#### Azure Blob Storage
+- **Container**: `documents` (automatically created)
+- **Organization**: Files stored as `{customerId}/{documentId}`
+- **Metadata**: Tracked for all documents
+- **Access**: Private (no public access)
+
+#### Azure Cache for Redis
+- **Tier**: Basic/Standard for dev, Premium for production
+- **Eviction**: LRU (allkeys-lru policy)
+- **Persistence**: Recommended for production
+- **SSL**: Enabled by default (port 6380)
+
+#### Key Vault (Optional)
+- **Purpose**: Store secrets securely
+- **Access**: Managed Identity or service principal
+- **Secrets**: OpenAI keys, Search keys, Storage keys
+- **Not required**: Can use environment variables instead
+
+#### Application Insights
+- **Telemetry**: Query latency, cache hits, errors
+- **Correlation**: Request tracking with IDs
+- **Sampling**: Configurable to control costs
+- **Dashboards**: Pre-built in Azure Portal
+
+### Feature Flag: AZURE_MODE
+
+The service uses a single feature flag to switch between local and Azure services:
+
+```bash
+# Local mode (default) - uses Qdrant, OpenAI API, local Redis
+AZURE_MODE=false
+
+# Azure mode - uses Azure AI Search, Azure OpenAI, Azure services
+AZURE_MODE=true
+```
+
+When `AZURE_MODE=true`, the application automatically:
+- Uses Azure OpenAI client instead of standard OpenAI
+- Uses Azure AI Search instead of Qdrant
+- Stores documents in Azure Blob Storage
+- Connects to Azure Cache for Redis (if configured)
+- Sends telemetry to Application Insights
+
+**No code changes needed** - just flip the flag!
+
+### Migration Scripts
+
+#### migrate-vectors-to-azure.ts
+Migrates existing vectors from Qdrant to Azure AI Search:
+
+```bash
+# Dry run (export only, don't import)
+npm run migrate:to-azure -- --dry-run
+
+# Full migration with custom batch size
+npm run migrate:to-azure -- --batch-size=100
+
+# Export to custom path
+npm run migrate:to-azure -- --export-path=/tmp/vectors.ndjson
+```
+
+#### reindex-with-azure-embeddings.ts
+Re-generates embeddings using Azure OpenAI and indexes to Azure AI Search:
+
+```bash
+# Dry run
+npm run migrate:reindex -- --dry-run
+
+# Full reindex
+npm run migrate:reindex
+
+# Custom batch size (smaller = fewer API calls but slower)
+npm run migrate:reindex -- --batch-size=5
+```
+
+**When to use**:
+- Switching from one embedding model to another
+- Old embeddings are incompatible
+- Want to ensure consistency with Azure OpenAI embeddings
+
+#### verify-migration.ts
+Compares search results between Qdrant and Azure AI Search:
+
+```bash
+# Run verification with default queries
+npm run migrate:verify
+
+# Test more queries
+npm run migrate:verify -- --queries=20
+
+# Different top-k value
+npm run migrate:verify -- --top-k=10
+```
+
+**Output**:
+- Overlap percentage (how many results match)
+- Average score difference
+- Detailed comparison per query
+- Quality assessment
+
+### Cost Considerations
+
+#### Development Environment
+- Azure OpenAI: ~$50-100/month (depends on usage)
+- Azure AI Search (Basic): ~$75/month
+- Blob Storage: ~$5/month
+- Redis (Basic): ~$15/month
+- Application Insights: ~$5/month
+- **Total: ~$150-250/month**
+
+#### Production Environment
+- Azure OpenAI (Standard, higher capacity): ~$200-500/month
+- Azure AI Search (Standard S1): ~$250/month
+- Blob Storage: ~$10/month
+- Redis (Premium P1): ~$100/month
+- Application Insights: ~$20/month
+- Container Apps: ~$50-100/month
+- **Total: ~$600-1200/month**
+
+**Cost optimization tips**:
+- Use Basic tier for non-critical workloads
+- Enable Application Insights sampling
+- Use Blob Storage lifecycle policies
+- Share Azure OpenAI deployment across environments
+- Monitor and adjust capacity based on actual usage
+
+### Deployment Guide
+
+See complete deployment guide in `infra/README.md`:
+
+- Prerequisites and permissions
+- Step-by-step deployment
+- RBAC configuration
+- Troubleshooting
+- Rollback procedures
+
+Also see `infra/migration-plan.md` for:
+- 7-phase migration timeline (4-5 weeks)
+- Blue-green deployment strategy
+- Cutover and rollback plans
+- Post-migration validation
+
+### Development with Azure
+
+See `dev-setup.md` for local development with Azure integration:
+
+- Using Azure services from local machine
+- Hybrid mode (mix of local and Azure)
+- Integration testing
+- Debugging with Application Insights
+
+### Azure Security Best Practices
+
+1. **Use Managed Identity**: Avoid storing credentials
+   ```bash
+   AZURE_KEYVAULT_USE_DEFAULT_CREDENTIAL=true
+   ```
+
+2. **Store secrets in Key Vault**: Don't commit to git
+   ```bash
+   AZURE_OPENAI_KEY_SECRET_NAME=openai-api-key
+   ```
+
+3. **Enable Private Endpoints**: For production workloads
+   - Azure AI Search
+   - Blob Storage
+   - Redis
+
+4. **Use RBAC**: Fine-grained permissions
+   - Reader for read-only access
+   - Contributor for full access
+   - Separate identities per environment
+
+5. **Monitor Access**: Application Insights tracks all requests
+   - Failed authentication attempts
+   - Unusual access patterns
+   - Performance anomalies
+
+### Troubleshooting Azure Deployment
+
+See `infra/TROUBLESHOOTING.md` for comprehensive troubleshooting guide.
+
+Common issues:
+
+#### "Azure OpenAI resource not found"
+- **Cause**: OpenAI resource requires special approval
+- **Solution**: Apply at https://aka.ms/oai/access
+- **Timeline**: Can take days to weeks
+
+#### "Deployment not found"
+- **Cause**: Models not deployed in Azure OpenAI
+- **Solution**: Deploy models via Azure Portal or CLI
+- **Models needed**: `gpt-4`, `text-embedding-3-large`
+
+#### "Failed to authenticate"
+- **Cause**: Managed Identity not configured
+- **Solution**: Use API keys initially, or configure RBAC
+
+#### "Index not found"
+- **Cause**: Azure Search index not created
+- **Solution**: Run app once to auto-create, or create manually
+
+For more issues, see `infra/TROUBLESHOOTING.md`.
+
+### API Compatibility
+
+✅ **All existing APIs remain unchanged** when switching to Azure mode:
+
+- `POST /form-query`: Same request/response format
+- `POST /ingest`: Same request/response format  
+- `GET /health`: Same format (adds Azure service status)
+- `GET /metrics`: Same Prometheus format
+
+**Confidence calculation** remains consistent:
+- Same weighted formula (50% similarity, 30% metadata, 20% LLM)
+- Azure Search provides both vector and lexical scores
+- Final confidence score format unchanged
+
+**Switching is transparent** to API clients!
+
+### Documentation
+
+- **[dev-setup.md](./dev-setup.md)**: Local development guide
+- **[CHANGELOG.md](./CHANGELOG.md)**: Migration changes and notes
+- **[infra/README.md](./infra/README.md)**: Infrastructure deployment
+- **[infra/migration-plan.md](./infra/migration-plan.md)**: Production migration guide
+- **[infra/TROUBLESHOOTING.md](./infra/TROUBLESHOOTING.md)**: Common issues
+
+### Getting Help
+
+- Check `infra/TROUBLESHOOTING.md` for common issues
+- Review Application Insights for runtime errors
+- Check Azure Portal service health
+- Review deployment logs in Azure
+- See `dev-setup.md` for development issues
+

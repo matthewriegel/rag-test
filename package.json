@@ -19,7 +19,10 @@
     "typecheck": "tsc --noEmit",
     "load-sample-data": "tsx scripts/load-sample-data.ts",
     "reset-db": "tsx scripts/reset-db.ts",
-    "evaluate": "tsx scripts/evaluate.ts"
+    "evaluate": "tsx scripts/evaluate.ts",
+    "migrate:to-azure": "tsx scripts/migrate-vectors-to-azure.ts",
+    "migrate:reindex": "tsx scripts/reindex-with-azure-embeddings.ts",
+    "migrate:verify": "tsx scripts/verify-migration.ts"
   },
   "keywords": [
     "RAG",
