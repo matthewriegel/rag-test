@@ -76,6 +76,7 @@ export interface FormQueryResponse {
   dataPath: string[];
   confidence: number;
   sources: Source[];
+  cached?: boolean;
   debug?: {
     llm_reasoning?: string;
   };

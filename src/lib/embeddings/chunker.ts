@@ -45,6 +45,7 @@ export class TextChunker {
 
     const chunks: TextChunk[] = [];
     let start = 0;
+    let previousStart = -1;
 
     while (start < cleanText.length) {
       const end = Math.min(start + chunkChars, cleanText.length);
@@ -76,12 +77,16 @@ export class TextChunker {
       }
 
       // Move start position with overlap
-      start = chunkEnd - overlapChars;
+      const nextStart = chunkEnd - overlapChars;
       
-      // Ensure we make progress
-      if (start <= (chunks[chunks.length - 1]?.text.length ?? 0)) {
+      // Ensure we make progress - compare with previous start position
+      if (nextStart <= previousStart) {
         start = chunkEnd;
+      } else {
+        start = nextStart;
       }
+      
+      previousStart = start;
     }
 
     // Update total chunks count

@@ -22,5 +22,6 @@
     "@typescript-eslint/no-explicit-any": "error",
     "@typescript-eslint/no-floating-promises": "error",
     "no-console": "warn"
-  }
+  },
+  "ignorePatterns": ["scripts/**/*.ts", "dist/**/*", "node_modules/**/*"]
 }

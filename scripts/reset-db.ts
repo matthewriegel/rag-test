@@ -18,9 +18,9 @@ async function resetDatabase(): Promise<void> {
     logger.info('Recreating Qdrant collection');
     await vectorStore.initialize();
 
-    // Clear Redis cache
+    // Clear Redis cache - use a wildcard to clear all RAG-related keys
     logger.info('Clearing Redis cache');
-    await cacheService.clearPattern('');
+    await cacheService.clearPattern('*');
 
     logger.info('Database reset complete');
   } catch (error) {

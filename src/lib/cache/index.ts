@@ -167,16 +167,43 @@ export class CacheService {
 
   /**
    * Clear all cache with prefix pattern
+   * Uses SCAN for non-blocking iteration in production
    */
   async clearPattern(pattern: string): Promise<void> {
+    const trimmedPattern = pattern.trim();
+
+    if (!trimmedPattern) {
+      logger.warn({ pattern }, 'Cache clear skipped due to empty pattern');
+      return;
+    }
+
     try {
-      const keys = await this.client.keys(`${this.keyPrefix}:${pattern}*`);
-      if (keys.length > 0) {
-        await this.client.del(...keys);
-        logger.info({ count: keys.length, pattern }, 'Cleared cache keys');
+      const scanPattern = `${this.keyPrefix}:${trimmedPattern}*`;
+      let cursor = '0';
+      let totalDeleted = 0;
+
+      do {
+        const result = await this.client.scan(
+          cursor,
+          'MATCH',
+          scanPattern,
+          'COUNT',
+          100
+        );
+        cursor = result[0];
+        const keys = result[1];
+
+        if (keys.length > 0) {
+          await this.client.del(...keys);
+          totalDeleted += keys.length;
+        }
+      } while (cursor !== '0');
+
+      if (totalDeleted > 0) {
+        logger.info({ count: totalDeleted, pattern: trimmedPattern }, 'Cleared cache keys');
       }
     } catch (error) {
-      logger.warn({ error, pattern }, 'Cache clear failed');
+      logger.warn({ error, pattern: trimmedPattern }, 'Cache clear failed');
     }
   }
 

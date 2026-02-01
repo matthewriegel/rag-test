@@ -61,7 +61,7 @@ export function authenticateAPIKey(
   }
 
   if (apiKey !== config.auth.apiKey) {
-    logger.warn({ providedKey: apiKey.substring(0, 8) }, 'Invalid API key');
+    logger.warn('Invalid API key attempt');
     res.status(403).json({ error: 'Invalid API key' });
     return;
   }

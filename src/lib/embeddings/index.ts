@@ -29,6 +29,20 @@ export class EmbeddingService {
 
     const embeddings = await openaiClient.createBatchEmbeddings(texts);
 
+    // Validate that we received the expected number of embeddings
+    if (embeddings.length !== texts.length) {
+      logger.error(
+        {
+          requested: texts.length,
+          received: embeddings.length,
+        },
+        'Embedding count mismatch'
+      );
+      throw new Error(
+        `Expected ${texts.length} embeddings but received ${embeddings.length}`
+      );
+    }
+
     return texts.map((text, index) => ({
       text,
       embedding: embeddings[index] || [],

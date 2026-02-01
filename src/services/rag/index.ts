@@ -35,7 +35,7 @@ export class RAGService {
 
     if (cachedResult) {
       logger.info('Returning cached query result');
-      return cachedResult;
+      return { ...cachedResult, cached: true };
     }
 
     try {
@@ -108,6 +108,7 @@ export class RAGService {
         dataPath: dataPaths,
         confidence: confidenceResult.finalConfidence,
         sources,
+        cached: false,
         debug: {
           llm_reasoning: reasoning,
         },

@@ -1,5 +1,4 @@
 import { ragService } from '../src/services/rag/index.js';
-import { ingestionService } from '../src/services/ingest/index.js';
 import { logger } from '../src/lib/logger.js';
 
 interface EvaluationCase {
@@ -71,19 +70,36 @@ class EvaluationHarness {
   }
 
   private checkAnswerQuality(actual: string, expected: string): boolean {
-    // Simple keyword matching - in production, use more sophisticated metrics
-    const actualLower = actual.toLowerCase();
-    const expectedKeywords = expected.toLowerCase().split(' ');
+    // Use Jaccard similarity over token sets for more reliable comparison
+    const normalizeAndTokenize = (text: string): Set<string> => {
+      return new Set(
+        text
+          .toLowerCase()
+          .split(/\W+/)
+          .filter((token) => token.length > 2)
+      );
+    };
 
-    let matchCount = 0;
-    for (const keyword of expectedKeywords) {
-      if (keyword.length > 3 && actualLower.includes(keyword)) {
-        matchCount++;
+    const actualTokens = normalizeAndTokenize(actual);
+    const expectedTokens = normalizeAndTokenize(expected);
+
+    if (expectedTokens.size === 0) {
+      // If there are no informative expected tokens, fall back to strict equality
+      return actual.trim().toLowerCase() === expected.trim().toLowerCase();
+    }
+
+    let intersectionSize = 0;
+    for (const token of expectedTokens) {
+      if (actualTokens.has(token)) {
+        intersectionSize++;
       }
     }
 
-    // Pass if at least 30% of keywords match
-    return matchCount / expectedKeywords.length >= 0.3;
+    const unionSize = actualTokens.size + expectedTokens.size - intersectionSize;
+    const jaccardSimilarity = unionSize === 0 ? 0 : intersectionSize / unionSize;
+
+    // Pass if Jaccard similarity is at least 0.5
+    return jaccardSimilarity >= 0.5;
   }
 
   printReport(results: EvaluationResult[]): void {

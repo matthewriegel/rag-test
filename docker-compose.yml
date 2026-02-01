@@ -51,7 +51,3 @@ services:
 networks:
   rag-network:
     driver: bridge
-
-volumes:
-  qdrant-data:
-  redis-data:

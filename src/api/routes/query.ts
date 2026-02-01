@@ -2,7 +2,6 @@ import { Router, Request, Response } from 'express';
 import { ragService } from '../../services/rag/index.js';
 import { logger } from '../../lib/logger.js';
 import { trackQuery } from '../middleware/metrics.js';
-import { cacheService } from '../../lib/cache/index.js';
 
 const router = Router();
 
@@ -34,9 +33,6 @@ router.post('/form-query', async (req: Request, res: Response) => {
       'Received form query'
     );
 
-    // Check if response was cached
-    const wasCached = !!(await cacheService.getCachedQuery(formQuestion, customerId));
-
     const result = await ragService.processQuery({
       customerId,
       formQuestion,
@@ -44,7 +40,7 @@ router.post('/form-query', async (req: Request, res: Response) => {
     });
 
     const duration = Date.now() - startTime;
-    trackQuery(duration, wasCached);
+    trackQuery(duration, result.cached || false);
 
     res.json(result);
   } catch (error) {

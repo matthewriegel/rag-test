@@ -47,6 +47,16 @@ export class IngestionService {
         chunks.map((c) => c.text)
       );
 
+      // Validate all embeddings were created successfully
+      for (let i = 0; i < embeddingResults.length; i++) {
+        const embedding = embeddingResults[i]?.embedding;
+        if (!embedding || embedding.length === 0) {
+          throw new Error(
+            `Failed to create embedding for chunk ${i} of document ${documentId}`
+          );
+        }
+      }
+
       // Prepare document chunks for storage
       const documentChunks: DocumentChunk[] = chunks.map((chunk, index) => ({
         id: `${documentId}-chunk-${index}`,
