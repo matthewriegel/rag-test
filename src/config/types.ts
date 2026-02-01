@@ -2,6 +2,7 @@ export interface AppConfig {
   env: string;
   port: number;
   logLevel: string;
+  azureMode: boolean;
   openai: OpenAIConfig;
   qdrant: QdrantConfig;
   redis: RedisConfig;

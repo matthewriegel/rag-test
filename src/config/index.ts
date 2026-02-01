@@ -1,5 +1,6 @@
 import { config as dotenvConfig } from 'dotenv';
 import { AppConfig } from './types.js';
+import { azureConfig } from './azure.js';
 
 // Load environment variables
 dotenvConfig();
@@ -26,6 +27,7 @@ export const config: AppConfig = {
   env: getEnvVar('NODE_ENV', 'development'),
   port: getEnvNumber('PORT', 3000),
   logLevel: getEnvVar('LOG_LEVEL', 'info'),
+  azureMode: process.env['AZURE_MODE'] === 'true',
 
   openai: {
     apiKey: getEnvVar('OPENAI_API_KEY'),
@@ -91,3 +93,6 @@ if (Math.abs(weightSum - 1.0) > 0.01) {
     `Confidence weights must sum to 1.0, got ${weightSum}. Check CONFIDENCE_WEIGHT_* environment variables.`
   );
 }
+
+// Export azure config for use by Azure adapters
+export { azureConfig };

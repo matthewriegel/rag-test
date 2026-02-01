@@ -1,43 +1,89 @@
-import OpenAI from 'openai';
-import { config } from '../../config/index.js';
+/**
+ * Azure OpenAI Client Wrapper
+ * Provides compatibility layer between OpenAI SDK and Azure OpenAI SDK
+ */
+
+import { AzureOpenAI } from 'openai';
+import { DefaultAzureCredential, getBearerTokenProvider } from '@azure/identity';
+import { azureConfig } from '../../config/azure.js';
 import { logger } from '../logger.js';
 
-export class OpenAIClient {
-  private client: OpenAI;
+export class AzureOpenAIClientWrapper {
+  private client: AzureOpenAI;
   private readonly maxRetries = 3;
   private readonly retryDelay = 1000;
 
   constructor() {
-    this.client = new OpenAI({
-      apiKey: config.openai.apiKey,
-      timeout: config.openai.timeoutMs,
-      maxRetries: this.maxRetries,
-    });
+    if (!azureConfig.openai.endpoint) {
+      throw new Error('AZURE_OPENAI_ENDPOINT is required in Azure mode');
+    }
+
+    // Use API key or DefaultAzureCredential based on configuration
+    const clientConfig: {
+      endpoint?: string;
+      apiVersion?: string;
+      apiKey?: string;
+      azureADTokenProvider?: () => Promise<string>;
+    } = {
+      endpoint: azureConfig.openai.endpoint,
+      apiVersion: azureConfig.openai.apiVersion,
+    };
+
+    if (azureConfig.openai.apiKey) {
+      // Use API key authentication
+      clientConfig.apiKey = azureConfig.openai.apiKey;
+    } else if (azureConfig.keyVault.useDefaultCredential) {
+      // Use managed identity / DefaultAzureCredential
+      const credential = new DefaultAzureCredential();
+      const scope = 'https://cognitiveservices.azure.com/.default';
+      clientConfig.azureADTokenProvider = getBearerTokenProvider(credential, scope);
+    } else {
+      throw new Error('AZURE_OPENAI_KEY is required or configure Azure DefaultAzureCredential');
+    }
+
+    this.client = new AzureOpenAI(clientConfig);
+
+    logger.info(
+      {
+        endpoint: azureConfig.openai.endpoint,
+        generationDeployment: azureConfig.openai.deployments.generation,
+        embeddingDeployment: azureConfig.openai.deployments.embedding,
+        authMethod: azureConfig.openai.apiKey ? 'api-key' : 'managed-identity',
+      },
+      'Azure OpenAI client initialized'
+    );
   }
 
+  /**
+   * Create embedding for a single text
+   */
   async createEmbedding(text: string): Promise<number[]> {
     return this.withRetry(async () => {
-      logger.debug({ textLength: text.length }, 'Creating embedding');
+      logger.debug({ textLength: text.length }, 'Creating Azure OpenAI embedding');
 
       const response = await this.client.embeddings.create({
-        model: config.openai.models.embedding,
+        model: azureConfig.openai.deployments.embedding,
         input: text,
       });
 
       if (!response.data[0]) {
-        throw new Error('No embedding returned from OpenAI');
+        throw new Error('No embedding returned from Azure OpenAI');
       }
 
+      // Normalize embedding vector (Azure OpenAI embeddings are already normalized)
       return response.data[0].embedding;
     }, 'createEmbedding');
   }
 
+  /**
+   * Create batch embeddings for multiple texts
+   */
   async createBatchEmbeddings(texts: string[]): Promise<number[][]> {
     return this.withRetry(async () => {
-      logger.debug({ count: texts.length }, 'Creating batch embeddings');
+      logger.debug({ count: texts.length }, 'Creating batch Azure OpenAI embeddings');
 
       const response = await this.client.embeddings.create({
-        model: config.openai.models.embedding,
+        model: azureConfig.openai.deployments.embedding,
         input: texts,
       });
 
@@ -45,6 +91,9 @@ export class OpenAIClient {
     }, 'createBatchEmbeddings');
   }
 
+  /**
+   * Generate chat completion
+   */
   async generateCompletion(
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     options?: {
@@ -54,7 +103,7 @@ export class OpenAIClient {
     }
   ): Promise<string> {
     return this.withRetry(async () => {
-      logger.debug({ messageCount: messages.length }, 'Generating completion');
+      logger.debug({ messageCount: messages.length }, 'Generating Azure OpenAI completion');
 
       // If confidence score is requested, add instruction to system message
       let modifiedMessages = messages;
@@ -63,7 +112,7 @@ export class OpenAIClient {
       }
 
       const response = await this.client.chat.completions.create({
-        model: config.openai.models.generation,
+        model: azureConfig.openai.deployments.generation,
         messages: modifiedMessages,
         temperature: options?.temperature ?? 0.7,
         max_tokens: options?.maxTokens ?? 1000,
@@ -71,13 +120,16 @@ export class OpenAIClient {
 
       const content = response.choices[0]?.message?.content;
       if (!content) {
-        throw new Error('No completion returned from OpenAI');
+        throw new Error('No completion returned from Azure OpenAI');
       }
 
       return content;
     }, 'generateCompletion');
   }
 
+  /**
+   * Add confidence score instructions to messages
+   */
   private addConfidenceInstructions(
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
   ): Array<{ role: 'system' | 'user' | 'assistant'; content: string }> {
@@ -104,6 +156,9 @@ export class OpenAIClient {
     return modifiedMessages;
   }
 
+  /**
+   * Retry wrapper with exponential backoff
+   */
   private async withRetry<T>(
     operation: () => Promise<T>,
     operationName: string
@@ -124,7 +179,7 @@ export class OpenAIClient {
               operation: operationName,
               error: lastError.message,
             },
-            'Retrying OpenAI operation'
+            'Retrying Azure OpenAI operation'
           );
 
           if (attempt < this.maxRetries) {
@@ -140,17 +195,25 @@ export class OpenAIClient {
     throw lastError || new Error('Operation failed after retries');
   }
 
+  /**
+   * Check if error is retryable
+   */
   private isRetryableError(error: unknown): boolean {
-    if (error instanceof OpenAI.APIError) {
-      // Retry on rate limits and server errors
-      return error.status === 429 || (error.status !== undefined && error.status >= 500);
+    // OpenAI SDK errors
+    if (error && typeof error === 'object' && 'status' in error) {
+      const status = (error as { status?: number }).status;
+      // Retry on rate limits (429) and server errors (5xx)
+      return status === 429 || (status !== undefined && status >= 500);
     }
     return false;
   }
 
+  /**
+   * Sleep utility
+   */
   private sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
 
-export const openaiClient = new OpenAIClient();
+export const azureOpenAIClient = new AzureOpenAIClientWrapper();
