@@ -18,7 +18,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.ts\"",
     "typecheck": "tsc --noEmit",
     "load-sample-data": "tsx scripts/load-sample-data.ts",
-    "reset-db": "tsx scripts/reset-db.ts"
+    "reset-db": "tsx scripts/reset-db.ts",
+    "evaluate": "tsx scripts/evaluate.ts"
   },
   "keywords": [
     "RAG",
