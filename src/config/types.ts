@@ -24,13 +24,13 @@ export interface OpenAIConfig {
 export interface QdrantConfig {
   url: string;
   collectionName: string;
-  apiKey?: string;
+  apiKey?: string | undefined;
   vectorSize: number;
 }
 
 export interface RedisConfig {
   url: string;
-  password?: string;
+  password?: string | undefined;
   db: number;
 }
 
@@ -66,9 +66,9 @@ export interface RateLimitConfig {
 
 // API Types
 export interface FormQueryRequest {
-  customerId?: string;
+  customerId?: string | undefined;
   formQuestion: string;
-  context?: Record<string, unknown>;
+  context?: Record<string, unknown> | undefined;
 }
 
 export interface FormQueryResponse {
@@ -89,9 +89,9 @@ export interface Source {
 
 export interface IngestRequest {
   documentId: string;
-  customerId?: string;
+  customerId?: string | undefined;
   content: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> | undefined;
 }
 
 export interface IngestResponse {
@@ -108,11 +108,11 @@ export interface Document {
 }
 
 export interface DocumentMetadata {
-  customerId?: string;
+  customerId?: string | undefined;
   documentId: string;
   chunkIndex: number;
   totalChunks: number;
-  source?: string;
+  source?: string | undefined;
   [key: string]: unknown;
 }
 
@@ -120,7 +120,7 @@ export interface DocumentChunk {
   id: string;
   content: string;
   metadata: DocumentMetadata;
-  embedding?: number[];
+  embedding?: number[] | undefined;
 }
 
 export interface SearchResult {

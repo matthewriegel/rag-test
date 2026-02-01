@@ -110,7 +110,7 @@ export class OpenAIClient {
   private isRetryableError(error: unknown): boolean {
     if (error instanceof OpenAI.APIError) {
       // Retry on rate limits and server errors
-      return error.status === 429 || (error.status && error.status >= 500);
+      return error.status === 429 || (error.status !== undefined && error.status >= 500);
     }
     return false;
   }

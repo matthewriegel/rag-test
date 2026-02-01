@@ -13,6 +13,7 @@ export default {
       },
     ],
   },
+  setupFiles: ['<rootDir>/src/tests/setup.ts'],
   testMatch: ['**/src/tests/**/*.test.ts'],
   collectCoverageFrom: ['src/**/*.ts', '!src/tests/**', '!src/index.ts'],
   coverageDirectory: 'coverage',

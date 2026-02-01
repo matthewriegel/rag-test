@@ -8,15 +8,25 @@ export class CacheService {
   private readonly keyPrefix = 'rag';
 
   constructor() {
-    this.client = new Redis(config.redis.url, {
-      password: config.redis.password,
+    const redisOptions: {
+      password?: string | undefined;
+      db: number;
+      retryStrategy: (times: number) => number;
+      maxRetriesPerRequest: number;
+    } = {
       db: config.redis.db,
       retryStrategy: (times: number) => {
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
       maxRetriesPerRequest: 3,
-    });
+    };
+
+    if (config.redis.password) {
+      redisOptions.password = config.redis.password;
+    }
+
+    this.client = new Redis(config.redis.url, redisOptions);
 
     this.client.on('error', (error) => {
       logger.error({ error }, 'Redis connection error');

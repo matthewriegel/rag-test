@@ -12,13 +12,13 @@ async function main(): Promise<void> {
 }
 
 // Handle uncaught errors
-process.on('uncaughtException', (error) => {
+process.on('uncaughtException', (error: Error) => {
   logger.fatal({ error }, 'Uncaught exception');
   process.exit(1);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.fatal({ reason, promise }, 'Unhandled rejection');
+process.on('unhandledRejection', (reason: unknown) => {
+  logger.fatal({ reason }, 'Unhandled rejection');
   process.exit(1);
 });
 
@@ -33,7 +33,7 @@ process.on('SIGINT', () => {
   process.exit(0);
 });
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   logger.fatal({ error }, 'Fatal error during startup');
   process.exit(1);
 });

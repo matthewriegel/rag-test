@@ -10,10 +10,18 @@ export class VectorStore {
   private initialized = false;
 
   constructor() {
-    this.client = new QdrantClient({
+    const clientConfig: {
+      url: string;
+      apiKey?: string | undefined;
+    } = {
       url: config.qdrant.url,
-      apiKey: config.qdrant.apiKey,
-    });
+    };
+
+    if (config.qdrant.apiKey) {
+      clientConfig.apiKey = config.qdrant.apiKey;
+    }
+
+    this.client = new QdrantClient(clientConfig);
     this.collectionName = config.qdrant.collectionName;
     this.vectorSize = config.qdrant.vectorSize;
   }
@@ -103,7 +111,12 @@ export class VectorStore {
         vector: number[];
         limit: number;
         with_payload: boolean;
-        filter?: unknown;
+        filter?: {
+          must: Array<{
+            key: string;
+            match: { value: unknown };
+          }>;
+        };
       } = {
         vector: queryEmbedding,
         limit,

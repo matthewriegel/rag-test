@@ -34,7 +34,7 @@ resetDatabase()
     logger.info('Done');
     process.exit(0);
   })
-  .catch((error) => {
+  .catch((error: unknown) => {
     logger.error({ error }, 'Script failed');
     process.exit(1);
   });

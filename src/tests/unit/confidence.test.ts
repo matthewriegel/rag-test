@@ -133,7 +133,7 @@ describe('Confidence Calculation', () => {
     });
 
     it('should handle different formats', () => {
-      const response = 'The certainty is 0.92 based on the evidence';
+      const response = 'Certainty: 0.92 based on the evidence';
       const confidence = extractLLMConfidence(response);
 
       expect(confidence).toBe(0.92);

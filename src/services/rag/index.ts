@@ -71,8 +71,8 @@ export class RAGService {
 
       // Build sources
       const sources: Source[] = rerankedResults.map((result) => ({
-        docId: result.payload.metadata.documentId,
-        chunkIndex: result.payload.metadata.chunkIndex,
+        docId: String(result.payload.metadata['documentId'] ?? ''),
+        chunkIndex: Number(result.payload.metadata['chunkIndex'] ?? 0),
         similarity: result.score,
       }));
 
@@ -186,8 +186,11 @@ export class RAGService {
     // Build context from retrieved documents
     const context = results
       .map(
-        (result, idx) =>
-          `[${idx + 1}] ${result.payload.content}\n(Source: ${result.payload.metadata.documentId})`
+        (result, idx) => {
+          const docId = result.payload.metadata['documentId'];
+          const docIdStr = typeof docId === 'string' ? docId : 'unknown';
+          return `[${idx + 1}] ${result.payload.content}\n(Source: ${docIdStr})`;
+        }
       )
       .join('\n\n');
 
@@ -248,10 +251,10 @@ Question: ${question}`;
 
     for (const result of results) {
       const meta = result.payload.metadata;
-      const docId = meta.documentId;
-      const chunkIndex = meta.chunkIndex;
+      const docId = meta['documentId'];
+      const chunkIndex = meta['chunkIndex'];
 
-      if (typeof docId === 'string') {
+      if (typeof docId === 'string' && typeof chunkIndex === 'number') {
         paths.add(`${docId}#chunk${chunkIndex}`);
       }
     }

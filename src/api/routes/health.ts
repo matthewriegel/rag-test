@@ -9,7 +9,8 @@ const router = Router();
  * GET /health
  * Health check endpoint
  */
-router.get('/health', async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+router.get('/health', async (_req: Request, res: Response) => {
   try {
     // Check vector store connection
     await vectorStore.initialize();
@@ -39,7 +40,8 @@ router.get('/health', async (req: Request, res: Response) => {
  * GET /metrics
  * Prometheus-compatible metrics endpoint
  */
-router.get('/metrics', async (req: Request, res: Response) => {
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+router.get('/metrics', async (_req: Request, res: Response) => {
   try {
     const metrics = getMetrics();
     const cacheStats = await cacheService.getStats();

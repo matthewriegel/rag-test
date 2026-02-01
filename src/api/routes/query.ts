@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { ragService } from '../../services/rag/index.js';
-import { FormQueryRequest } from '../../config/types.js';
 import { logger } from '../../lib/logger.js';
 import { trackQuery } from '../middleware/metrics.js';
 import { cacheService } from '../../lib/cache/index.js';
@@ -11,11 +10,16 @@ const router = Router();
  * POST /form-query
  * Process a form question with RAG
  */
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.post('/form-query', async (req: Request, res: Response) => {
   const startTime = Date.now();
 
   try {
-    const { customerId, formQuestion, context }: FormQueryRequest = req.body;
+    const { customerId, formQuestion, context } = req.body as {
+      customerId?: string;
+      formQuestion?: unknown;
+      context?: Record<string, unknown>;
+    };
 
     if (!formQuestion || typeof formQuestion !== 'string') {
       res.status(400).json({ error: 'formQuestion is required and must be a string' });

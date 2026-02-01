@@ -58,6 +58,7 @@ describe('API Integration Tests', () => {
         });
 
       expect(response.status).toBe(400);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(response.body.error).toContain('documentId');
     });
 
@@ -70,6 +71,7 @@ describe('API Integration Tests', () => {
         });
 
       expect(response.status).toBe(400);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(response.body.error).toContain('content');
     });
   });
@@ -79,6 +81,7 @@ describe('API Integration Tests', () => {
       const response = await request(app).post('/form-query').send({});
 
       expect(response.status).toBe(400);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
       expect(response.body.error).toContain('formQuestion');
     });
 

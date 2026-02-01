@@ -1,6 +1,5 @@
 import { Router, Request, Response } from 'express';
 import { ingestionService } from '../../services/ingest/index.js';
-import { IngestRequest } from '../../config/types.js';
 import { logger } from '../../lib/logger.js';
 import { authenticateAPIKey } from '../middleware/auth.js';
 import { trackIngestion } from '../middleware/metrics.js';
@@ -11,9 +10,15 @@ const router = Router();
  * POST /ingest
  * Ingest a document into the vector store (requires API key)
  */
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
 router.post('/ingest', authenticateAPIKey, async (req: Request, res: Response) => {
   try {
-    const { documentId, customerId, content, metadata }: IngestRequest = req.body;
+    const { documentId, customerId, content, metadata } = req.body as {
+      documentId?: unknown;
+      customerId?: string;
+      content?: unknown;
+      metadata?: Record<string, unknown>;
+    };
 
     if (!documentId || typeof documentId !== 'string') {
       res.status(400).json({ error: 'documentId is required and must be a string' });

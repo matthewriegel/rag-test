@@ -1,5 +1,5 @@
 import { openaiClient } from '../openai/client.js';
-import { textChunker, TextChunk } from './chunker.js';
+import { textChunker } from './chunker.js';
 import { logger } from '../logger.js';
 
 export interface EmbeddingResult {

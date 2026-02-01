@@ -3,16 +3,16 @@ import { logger } from '../../lib/logger.js';
 
 export function errorHandler(
   err: Error,
-  req: Request,
+  _req: Request,
   res: Response,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  next: NextFunction
+  _next: NextFunction
 ): void {
   logger.error(
     {
       error: err,
-      path: req.path,
-      method: req.method,
+      path: _req.path,
+      method: _req.method,
     },
     'Request error'
   );

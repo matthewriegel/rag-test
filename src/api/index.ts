@@ -48,14 +48,17 @@ export async function startServer(): Promise<void> {
   const app = createApp();
   const port = config.port;
 
-  app.listen(port, () => {
-    logger.info(
-      {
-        port,
-        env: config.env,
-        logLevel: config.logLevel,
-      },
-      'RAG service started'
-    );
+  return new Promise((resolve) => {
+    app.listen(port, () => {
+      logger.info(
+        {
+          port,
+          env: config.env,
+          logLevel: config.logLevel,
+        },
+        'RAG service started'
+      );
+      resolve();
+    });
   });
 }

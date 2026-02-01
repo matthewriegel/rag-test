@@ -1,11 +1,10 @@
 import { ingestionService } from '../src/services/ingest/index.js';
 import { logger } from '../src/lib/logger.js';
-
 const sampleDocuments = [
-  {
-    documentId: 'customer-handbook-001',
-    customerId: 'cust-123',
-    content: `
+    {
+        documentId: 'customer-handbook-001',
+        customerId: 'cust-123',
+        content: `
 Customer Service Handbook
 
 Contact Information:
@@ -27,16 +26,16 @@ Shipping Times:
 - Express shipping: 2-3 business days
 - Overnight shipping: Next business day
     `.trim(),
-    metadata: {
-      type: 'handbook',
-      version: '1.0',
-      lastUpdated: '2024-01-15',
+        metadata: {
+            type: 'handbook',
+            version: '1.0',
+            lastUpdated: '2024-01-15',
+        },
     },
-  },
-  {
-    documentId: 'product-catalog-001',
-    customerId: 'cust-123',
-    content: `
+    {
+        documentId: 'product-catalog-001',
+        customerId: 'cust-123',
+        content: `
 Product Catalog - Electronics
 
 Premium Wireless Headphones (SKU: WH-1000)
@@ -66,15 +65,15 @@ Features:
 - USB-C connectivity
 - Works with all major video conferencing platforms
     `.trim(),
-    metadata: {
-      type: 'catalog',
-      category: 'electronics',
-      year: '2024',
+        metadata: {
+            type: 'catalog',
+            category: 'electronics',
+            year: '2024',
+        },
     },
-  },
-  {
-    documentId: 'faq-general-001',
-    content: `
+    {
+        documentId: 'faq-general-001',
+        content: `
 Frequently Asked Questions
 
 Q: How do I track my order?
@@ -97,15 +96,15 @@ Q: What if I receive a damaged item?
 A: Please contact customer service immediately with photos of the damage. 
 We will arrange for a replacement or full refund, including return shipping costs.
     `.trim(),
-    metadata: {
-      type: 'faq',
-      category: 'general',
+        metadata: {
+            type: 'faq',
+            category: 'general',
+        },
     },
-  },
-  {
-    documentId: 'account-info-001',
-    customerId: 'cust-456',
-    content: `
+    {
+        documentId: 'account-info-001',
+        customerId: 'cust-456',
+        content: `
 Account Information for Enterprise Customer
 
 Company Name: Acme Corporation
@@ -129,43 +128,38 @@ Billing Contact:
 - Email: billing@acme.com
 - Phone: 555-0199
     `.trim(),
-    metadata: {
-      type: 'account',
-      tier: 'enterprise',
-    },
-  },
-];
-
-async function loadSampleData(): Promise<void> {
-  logger.info('Loading sample data...');
-
-  try {
-    for (const doc of sampleDocuments) {
-      logger.info({ documentId: doc.documentId }, 'Ingesting document');
-      const result = await ingestionService.ingestDocument(doc);
-      logger.info(
-        {
-          documentId: doc.documentId,
-          chunksCreated: result.chunksCreated,
-          success: result.success,
+        metadata: {
+            type: 'account',
+            tier: 'enterprise',
         },
-        'Document ingested'
-      );
+    },
+];
+async function loadSampleData() {
+    logger.info('Loading sample data...');
+    try {
+        for (const doc of sampleDocuments) {
+            logger.info({ documentId: doc.documentId }, 'Ingesting document');
+            const result = await ingestionService.ingestDocument(doc);
+            logger.info({
+                documentId: doc.documentId,
+                chunksCreated: result.chunksCreated,
+                success: result.success,
+            }, 'Document ingested');
+        }
+        logger.info('Sample data loaded successfully');
     }
-
-    logger.info('Sample data loaded successfully');
-  } catch (error) {
-    logger.error({ error }, 'Failed to load sample data');
-    throw error;
-  }
+    catch (error) {
+        logger.error({ error }, 'Failed to load sample data');
+        throw error;
+    }
 }
-
 loadSampleData()
-  .then(() => {
+    .then(() => {
     logger.info('Done');
     process.exit(0);
-  })
-  .catch((error: unknown) => {
+})
+    .catch((error) => {
     logger.error({ error }, 'Script failed');
     process.exit(1);
-  });
+});
+//# sourceMappingURL=load-sample-data.js.map

@@ -37,14 +37,14 @@ const logger = pino({
   level: config.logLevel,
   transport:
     config.env === 'development'
-      ? {
+      ? ({
           target: 'pino-pretty',
           options: {
             colorize: true,
             translateTime: 'HH:MM:ss Z',
             ignore: 'pid,hostname',
           },
-        }
+        } as const)
       : undefined,
   redact: {
     paths: ['req.headers.authorization', 'password', 'apiKey', 'token'],

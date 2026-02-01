@@ -79,7 +79,7 @@ export class TextChunker {
       start = chunkEnd - overlapChars;
       
       // Ensure we make progress
-      if (start <= chunks[chunks.length - 1]?.text.length || 0) {
+      if (start <= (chunks[chunks.length - 1]?.text.length ?? 0)) {
         start = chunkEnd;
       }
     }

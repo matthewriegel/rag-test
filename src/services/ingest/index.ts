@@ -1,4 +1,3 @@
-import { v4 as uuidv4 } from 'uuid';
 import { embeddingService } from '../../lib/embeddings/index.js';
 import { vectorStore } from '../../lib/vectorStore/index.js';
 import { cacheService } from '../../lib/cache/index.js';
@@ -113,7 +112,7 @@ export class IngestionService {
       } else {
         logger.error(
           {
-            error: result.reason,
+            error: result.reason instanceof Error ? result.reason.message : String(result.reason),
             documentId: requests[index]?.documentId,
           },
           'Batch ingestion item failed'
