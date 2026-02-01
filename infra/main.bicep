@@ -27,7 +27,7 @@ param appName string
 @description('Unique suffix for globally unique resource names (leave empty for auto-generation)')
 param uniqueSuffix string = uniqueString(resourceGroup().id)
 
-@description('Azure OpenAI location (limited availability - check Azure portal)')
+@description('Azure OpenAI location (limited availability - verify current regions at https://learn.microsoft.com/azure/ai-services/openai/concepts/models)')
 @allowed(['eastus', 'eastus2', 'southcentralus', 'westus', 'westeurope', 'northeurope', 'uksouth', 'swedencentral', 'switzerlandnorth', 'australiaeast', 'canadaeast', 'francecentral', 'japaneast'])
 param openAiLocation string = 'eastus'
 

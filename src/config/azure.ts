@@ -80,7 +80,7 @@ export const azureConfig: AzureConfig = {
     apiKey: getEnvVarOptional('AZURE_OPENAI_KEY'),
     keyVaultSecretName: getEnvVarOptional('AZURE_OPENAI_KEY_SECRET_NAME'),
     deployments: {
-      // Note: gpt-4.1-mini doesn't exist; using gpt-4 or gpt-35-turbo deployment
+      // Note: Using gpt-4 or gpt-4o-mini deployment (or gpt-35-turbo for cost savings)
       generation: getEnvVar('AZURE_OPENAI_GENERATION_DEPLOYMENT', 'gpt-4'),
       embedding: getEnvVar('AZURE_OPENAI_EMBEDDING_DEPLOYMENT', 'text-embedding-3-large'),
     },
